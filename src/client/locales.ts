@@ -1,0 +1,129 @@
+/** Locale bundles for the skill manager settings page. */
+
+/** Locale keys the page renders. */
+export type SkillManagerLocaleKey =
+  | 'nav'
+  | 'title'
+  | 'intro'
+  | 'roots'
+  | 'refresh'
+  | 'upload'
+  | 'uploadHint'
+  | 'overwrite'
+  | 'github'
+  | 'githubPlaceholder'
+  | 'githubAction'
+  | 'empty'
+  | 'loading'
+  | 'retry'
+  | 'error'
+  | 'priority'
+  | 'duplicate'
+  | 'stateInvalid'
+  | 'stateMissing'
+  | 'enabled'
+  | 'disabled'
+  | 'toggleOn'
+  | 'toggleOff'
+  | 'toggleNote'
+  | 'edit'
+  | 'editor'
+  | 'save'
+  | 'cancel'
+  | 'saving'
+  | 'close'
+  | 'conflict'
+  | 'installed'
+  | 'skippedExists'
+  | 'skippedInvalid'
+  | 'skippedTooLarge'
+  | 'skippedLimit'
+  | 'sourceUserDsh'
+  | 'sourceUserAgents'
+  | 'installRoot'
+
+/** English copy. */
+export const en: Record<SkillManagerLocaleKey, string> = {
+  nav: 'Skills',
+  title: 'Skills',
+  intro: 'Every skill this deployment can load from its user-level roots, with the source and precedence that decide a duplicated name.',
+  roots: 'Scanned roots',
+  refresh: 'Refresh',
+  upload: 'Upload skill documents',
+  uploadHint: 'Choose one or more Markdown documents; each becomes a skill named by its frontmatter or file name.',
+  overwrite: 'Replace existing skills',
+  github: 'Import from GitHub',
+  githubPlaceholder: 'https://github.com/<owner>/<repo>',
+  githubAction: 'Import',
+  empty: 'No skill documents were found in the scanned roots.',
+  loading: 'Reading the skill catalog…',
+  retry: 'Try again',
+  error: 'The request failed',
+  priority: 'Priority',
+  duplicate: 'Name appears in more than one root; the switch applies to every one of them.',
+  stateInvalid: 'Unusable',
+  stateMissing: 'Document missing',
+  enabled: 'Enabled',
+  disabled: 'Disabled',
+  toggleOn: 'Enable',
+  toggleOff: 'Disable',
+  toggleNote: 'Disabling writes disable-model-invocation: true and user-invocable: false into SKILL.md, and enabling restores the values it replaced.',
+  edit: 'Edit SKILL.md',
+  editor: 'Editing',
+  save: 'Save',
+  cancel: 'Cancel',
+  saving: 'Saving…',
+  close: 'Close editor',
+  conflict: 'The document changed on disk after it was opened. Reopen it to continue.',
+  installed: 'Installed',
+  skippedExists: 'Skipped (already exists)',
+  skippedInvalid: 'Skipped (unusable)',
+  skippedTooLarge: 'Skipped (too large)',
+  skippedLimit: 'Skipped (import limit reached)',
+  sourceUserDsh: 'User (~/.dsh)',
+  sourceUserAgents: 'Shared agents (~/.agents)',
+  installRoot: 'Imports are written to',
+}
+
+/** Simplified Chinese copy. */
+export const zh: Record<SkillManagerLocaleKey, string> = {
+  nav: '技能',
+  title: '技能',
+  intro: '本部署可从用户级技能目录加载的全部技能，并标出来源与决定重名的优先级。',
+  roots: '扫描目录',
+  refresh: '刷新',
+  upload: '上传技能文档',
+  uploadHint: '可选择一个或多个 Markdown 文档；名称取自 frontmatter，缺失时取文件名。',
+  overwrite: '覆盖已存在的技能',
+  github: '从 GitHub 导入',
+  githubPlaceholder: 'https://github.com/<owner>/<repo>',
+  githubAction: '导入',
+  empty: '扫描目录中没有找到任何技能文档。',
+  loading: '正在读取技能目录…',
+  retry: '重试',
+  error: '请求失败',
+  priority: '优先级',
+  duplicate: '同名技能存在于多个目录；启停会同时作用于它们。',
+  stateInvalid: '无法解析',
+  stateMissing: '文档已不存在',
+  enabled: '已启用',
+  disabled: '已停用',
+  toggleOn: '启用',
+  toggleOff: '停用',
+  toggleNote: '停用会向 SKILL.md 写入 disable-model-invocation: true 与 user-invocable: false；启用则恢复被替换前的取值。',
+  edit: '编辑 SKILL.md',
+  editor: '正在编辑',
+  save: '保存',
+  cancel: '取消',
+  saving: '保存中…',
+  close: '关闭编辑器',
+  conflict: '该文档在打开后已被外部修改，请重新打开后再保存。',
+  installed: '已安装',
+  skippedExists: '已跳过（同名已存在）',
+  skippedInvalid: '已跳过（无法解析）',
+  skippedTooLarge: '已跳过（文件过大）',
+  skippedLimit: '已跳过（超出导入数量上限）',
+  sourceUserDsh: '用户（~/.dsh）',
+  sourceUserAgents: '共享 agents（~/.agents）',
+  installRoot: '导入写入目录',
+}

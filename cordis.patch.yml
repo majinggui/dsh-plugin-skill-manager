@@ -1,0 +1,6 @@
+# One package, two faces: the plugin row below mounts the host half (the JSON
+# route over the managed skill roots) and, through `dsh.client`, the browser
+# half (the Skills page in Settings).
+- insert:
+    - id: skill-manager
+      name: dsh-plugin-skill-manager

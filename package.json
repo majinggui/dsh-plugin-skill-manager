@@ -1,0 +1,80 @@
+{
+  "name": "dsh-plugin-skill-manager",
+  "version": "0.1.0",
+  "description": "Skill management for the DeepSeek Harness Web client: scan the user-level skill roots, list every skill with its source and precedence, switch one off, edit its SKILL.md, and install skills from documents or a GitHub link",
+  "keywords": ["dsh-plugin", "deepseek-harness", "skills", "plugin"],
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": "^22.19.0 || >=24.0.0"
+  },
+  "main": "lib/index.js",
+  "types": "lib/types/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./lib/types/index.d.ts",
+      "default": "./lib/index.js"
+    },
+    "./client": {
+      "types": "./lib/types/client/index.d.ts",
+      "default": "./lib/client.js"
+    },
+    "./src/*": "./src/*",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.js.map",
+    "lib/**/*.d.ts",
+    "lib/**/*.d.ts.map",
+    "src",
+    "cordis.patch.yml",
+    "README.md",
+    "README.zh.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "engines": {
+      "dsh": ">=0.2.0-rc.1"
+    },
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-locale",
+        "@deepseek-ai/dsh-client-ui-settings",
+        "@deepseek-ai/dsh-client-ui-primitives"
+      ]
+    }
+  },
+  "scripts": {
+    "build": "tsc -b && tsdown",
+    "typecheck": "tsc -b --pretty false",
+    "watch": "tsdown --watch"
+  },
+  "dependencies": {
+    "schemastery": "^3.18.0",
+    "yaml": "^2.4.2"
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@deepseek-ai/cordis": "^4.0.4",
+    "@deepseek-ai/dsh-client-connection": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-locale": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-ui-primitives": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-ui-renderer": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-ui-settings": "0.2.0-rc.1",
+    "@deepseek-ai/dsh-client-ui-slots": "0.2.0-rc.1",
+    "@types/node": "^22.20.0",
+    "@types/react": "~18.3.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "tsdown": "^0.22.2",
+    "typescript": "^6.0.3"
+  }
+}
