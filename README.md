@@ -30,11 +30,24 @@ The package declares one bundle patch (`cordis.patch.yml`) that inserts the sing
 | Scan the shared agents directory | Switches `~/.agents/skills` in or out of the scan; off by default, and the choice is remembered |
 | Enable / disable | Switches one name off or back on (see how below) |
 | Edit `SKILL.md` | Reads the document into an inline editor and saves it against the version it was read from |
-| Upload skill documents | Reads one or more `.md` files in the browser and installs them under the install root |
+| Upload skill documents | Reads `.md` files and/or skill archives (`.zip`) in the browser and installs them under the install root |
 | Import from GitHub | Reads a repository link and installs every `SKILL.md` it exposes |
 | Replace existing skills | Passes `overwrite` to an installation, which otherwise skips a name that already exists |
 
 Documents that cannot be parsed are listed with their parse error instead of disappearing, and a name that two roots define is explained inline because its switch applies to the whole name.
+
+### Skill archives
+
+A `.zip` upload installs every directory that holds a `SKILL.md` as one skill and keeps the files beside it (scripts, references, assets). The single top-level directory Finder and GitHub's "Download ZIP" wrap archives in is stripped first, and an archive with no `SKILL.md` falls back to its root-level Markdown documents.
+
+````text
+bundle.zip
+└── pdf-helper/
+    ├── SKILL.md          →  ~/.dsh/skills/pdf-helper/SKILL.md  (normalized frontmatter)
+    └── scripts/fill.sh   →  ~/.dsh/skills/pdf-helper/scripts/fill.sh
+````
+
+Entry paths are normalized and refused when absolute or containing `..`, so extraction cannot escape the install root; encrypted, ZIP64, and unsupported-compression archives are refused with a readable reason.
 
 ### How enablement works
 
@@ -60,8 +73,11 @@ That removes the skill from the model catalog, the `skill` tool, and the `/` men
 | `githubMaxFiles` | `20` | Largest number of documents one GitHub import installs |
 | `githubMaxDocumentBytes` | `524288` | Largest accepted GitHub document |
 | `githubTimeoutMs` | `30000` | Deadline for one GitHub import |
-| `uploadMaxDocuments` | `20` | Largest number of documents one upload installs |
-| `uploadMaxDocumentBytes` | `524288` | Largest accepted upload document |
+| `uploadMaxDocuments` | `20` | Largest number of documents and archives one upload installs |
+| `uploadMaxDocumentBytes` | `524288` | Largest accepted upload document, and the base entry bound for an archive member |
+| `zipMaxBytes` | `8388608` | Largest archive one upload may carry, before extraction |
+| `zipMaxUncompressedBytes` | `33554432` | Largest uncompressed size one archive may reach |
+| `zipMaxMembers` | `500` | Largest number of files one archive may hold |
 
 Set them where the plugin row is declared:
 
@@ -119,7 +135,7 @@ Source layout:
 - Enablement is per name, not per document: two roots defining one name cannot be switched separately.
 - The catalog is a snapshot: a skill added elsewhere appears after the next refresh.
 - A project-level skill is outside this page; only the user-level and configured roots are scanned.
-- Uploads are Markdown documents; a bundle's supporting scripts or assets are not uploaded.
+- Upload archives are read with the stored and deflate methods only; an encrypted or ZIP64 archive is refused rather than guessed at.
 
 ## License
 

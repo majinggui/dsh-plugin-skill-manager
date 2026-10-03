@@ -14,6 +14,7 @@ import type {
   SkillInstallRequest,
   SkillRequest,
   SkillToggleRequest,
+  SkillUploadBundle,
   SkillUploadDocument,
   SkillWriteRequest,
 } from './protocol.ts'
@@ -95,7 +96,7 @@ function decode(body: unknown): Decoded {
     }
     case 'install': {
       const request = decodeInstall(body.request)
-      return request === undefined ? invalid('"install" requires { documents, overwrite }') : { request: { op: 'install', request } }
+      return request === undefined ? invalid('"install" requires { documents, bundles?, overwrite }') : { request: { op: 'install', request } }
     }
     case 'github': {
       const request = decodeGitHub(body.request)
@@ -125,7 +126,14 @@ function decodeInstall(value: unknown): SkillInstallRequest | undefined {
     if (!isRecord(entry) || typeof entry.filename !== 'string' || typeof entry.content !== 'string') return undefined
     documents.push({ filename: entry.filename, content: entry.content })
   }
-  return { documents, overwrite: value.overwrite }
+  const rawBundles = value.bundles ?? []
+  if (!Array.isArray(rawBundles)) return undefined
+  const bundles: SkillUploadBundle[] = []
+  for (const entry of rawBundles) {
+    if (!isRecord(entry) || typeof entry.filename !== 'string' || typeof entry.data !== 'string') return undefined
+    bundles.push({ filename: entry.filename, data: entry.data })
+  }
+  return { documents, bundles, overwrite: value.overwrite }
 }
 
 function decodeGitHub(value: unknown): SkillGitHubRequest | undefined {

@@ -18,8 +18,10 @@ import {
   type ManagedRoot,
   type ScannedSkill,
 } from './catalog.ts'
+import { planArchive } from './bundles.ts'
 import {
   disabledInvocation,
+  installBundle,
   installSkill,
   prepareSkillDocument,
   previousInvocation,
@@ -30,6 +32,7 @@ import {
   type PreparedSkill,
 } from './documents.ts'
 import { fetchGitHubDocuments, GitHubImportError, parseGitHubUrl } from './github.ts'
+import { readZip, ZipError, type ZipLimits } from './zip.ts'
 import { SkillLedger, type DisabledRecord } from './ledger.ts'
 import type {
   SkillCatalog,
@@ -48,6 +51,9 @@ const DEFAULT_GITHUB_MAX_DOCUMENT_BYTES = 512 * 1024
 const DEFAULT_GITHUB_TIMEOUT_MS = 30_000
 const DEFAULT_UPLOAD_MAX_DOCUMENTS = 20
 const DEFAULT_UPLOAD_MAX_DOCUMENT_BYTES = 512 * 1024
+const DEFAULT_ZIP_MAX_BYTES = 8 * 1024 * 1024
+const DEFAULT_ZIP_MAX_UNCOMPRESSED_BYTES = 32 * 1024 * 1024
+const DEFAULT_ZIP_MAX_MEMBERS = 500
 
 /** One failed operation, carrying the stable code the page branches on. */
 export class SkillManagerError extends Error {
@@ -67,6 +73,12 @@ export interface ManagerConfig {
   readonly agentsHome?: string
   /** Deployment default for scanning the shared agents root; the page's switch overrides it. */
   readonly includeAgentsRoot?: boolean
+  /** Largest archive one upload may carry, before extraction. */
+  readonly zipMaxBytes?: number
+  /** Largest uncompressed size one archive may reach. */
+  readonly zipMaxUncompressedBytes?: number
+  /** Largest number of files one archive may hold. */
+  readonly zipMaxMembers?: number
   readonly extraRoots?: readonly { path: string; source: string; rank: number }[]
   readonly stateFile?: string
   readonly installRoot?: string
@@ -88,6 +100,8 @@ export class SkillManager {
   private readonly github: { maxFiles: number; maxDocumentBytes: number; timeoutMs: number }
   private readonly uploadMaxDocuments: number
   private readonly uploadMaxDocumentBytes: number
+  private readonly zipMaxBytes: number
+  private readonly zipLimits: ZipLimits
 
   /**
    * @param ctx - host context used only for logging.
@@ -116,6 +130,12 @@ export class SkillManager {
     }
     this.uploadMaxDocuments = positive('uploadMaxDocuments', config.uploadMaxDocuments, DEFAULT_UPLOAD_MAX_DOCUMENTS)
     this.uploadMaxDocumentBytes = positive('uploadMaxDocumentBytes', config.uploadMaxDocumentBytes, DEFAULT_UPLOAD_MAX_DOCUMENT_BYTES)
+    this.zipMaxBytes = positive('zipMaxBytes', config.zipMaxBytes, DEFAULT_ZIP_MAX_BYTES)
+    this.zipLimits = {
+      maxMembers: positive('zipMaxMembers', config.zipMaxMembers, DEFAULT_ZIP_MAX_MEMBERS),
+      maxEntryBytes: this.uploadMaxDocumentBytes * 8,
+      maxTotalBytes: positive('zipMaxUncompressedBytes', config.zipMaxUncompressedBytes, DEFAULT_ZIP_MAX_UNCOMPRESSED_BYTES),
+    }
   }
 
   /**
@@ -250,12 +270,49 @@ export class SkillManager {
    */
   async install(request: SkillInstallRequest, signal?: AbortSignal): Promise<SkillInstallValue> {
     signal?.throwIfAborted()
-    if (request.documents.length > this.uploadMaxDocuments) {
-      throw new SkillManagerError('rejected', `at most ${this.uploadMaxDocuments.toString()} documents may be installed at once`)
+    const bundles = request.bundles ?? []
+    if (request.documents.length + bundles.length > this.uploadMaxDocuments) {
+      throw new SkillManagerError('rejected', `at most ${this.uploadMaxDocuments.toString()} documents or archives may be installed at once`)
     }
     const skipped: SkillSkippedDocument[] = []
-    const prepared = prepareAll(request.documents, skipped, this.uploadMaxDocumentBytes)
-    return await this.installAll(prepared, request.overwrite, skipped, signal)
+    const installed: string[] = []
+    await this.installPrepared(
+      prepareAll(request.documents, skipped, this.uploadMaxDocumentBytes),
+      request.overwrite,
+      installed,
+      skipped,
+      signal,
+    )
+    for (const bundle of bundles) {
+      signal?.throwIfAborted()
+      const archive = decodeBase64(bundle.data)
+      if (archive.byteLength > this.zipMaxBytes) {
+        throw new SkillManagerError('rejected', `"${bundle.filename}" exceeds ${this.zipMaxBytes.toString()} bytes`)
+      }
+      let entries
+      try {
+        entries = readZip(archive, this.zipLimits)
+      } catch (error) {
+        throw new SkillManagerError('invalid', error instanceof ZipError ? error.message : String(error))
+      }
+      const plan = planArchive(entries)
+      for (const failure of plan.invalid) skipped.push({ name: failure.name, reason: 'invalid' })
+      await this.installPrepared(
+        prepareAll(plan.documents, skipped, this.uploadMaxDocumentBytes),
+        request.overwrite,
+        installed,
+        skipped,
+        signal,
+      )
+      for (const entry of plan.bundles) {
+        signal?.throwIfAborted()
+        const result = await installBundle(this.installRoot, entry.skill, entry.files, request.overwrite)
+        if (result === 'installed') installed.push(entry.skill.name)
+        else skipped.push({ name: entry.skill.name, reason: 'exists' })
+      }
+    }
+    signal?.throwIfAborted()
+    return { installed, skipped, catalog: await this.catalog(signal) }
   }
 
   /**
@@ -282,26 +339,32 @@ export class SkillManager {
       name: entry.name,
       reason: entry.reason,
     }))
-    const prepared = prepareAll(fetched.documents, skipped, Number.POSITIVE_INFINITY)
-    return await this.installAll(prepared, request.overwrite, skipped, signal)
+    const installed: string[] = []
+    await this.installPrepared(
+      prepareAll(fetched.documents, skipped, Number.POSITIVE_INFINITY),
+      request.overwrite,
+      installed,
+      skipped,
+      signal,
+    )
+    signal?.throwIfAborted()
+    return { installed, skipped, catalog: await this.catalog(signal) }
   }
 
-  private async installAll(
+  /** Write every prepared skill, appending outcomes to the caller's lists. */
+  private async installPrepared(
     prepared: readonly PreparedSkill[],
     overwrite: boolean,
-    skipped: readonly SkillSkippedDocument[],
+    installed: string[],
+    skipped: SkillSkippedDocument[],
     signal?: AbortSignal,
-  ): Promise<SkillInstallValue> {
-    const installed: string[] = []
-    const rejected = [...skipped]
+  ): Promise<void> {
     for (const skill of prepared) {
       signal?.throwIfAborted()
       const result = await installSkill(this.installRoot, skill, overwrite)
       if (result === 'installed') installed.push(skill.name)
-      else rejected.push({ name: skill.name, reason: 'exists' })
+      else skipped.push({ name: skill.name, reason: 'exists' })
     }
-    signal?.throwIfAborted()
-    return { installed, skipped: rejected, catalog: await this.catalog(signal) }
   }
 
   private async findSkill(name: string, signal?: AbortSignal): Promise<ScannedSkill | undefined> {
@@ -343,6 +406,10 @@ function expandHome(path: string): string {
   if (path === '~') return homedir()
   if (path.startsWith('~/') || path.startsWith('~\\')) return join(homedir(), path.slice(2))
   return path
+}
+
+function decodeBase64(value: string): Uint8Array {
+  return new Uint8Array(Buffer.from(value, 'base64'))
 }
 
 function prepareAll(

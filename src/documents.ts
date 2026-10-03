@@ -17,6 +17,7 @@ import { basename, dirname, join } from 'node:path'
 import { stringify as stringifyYaml } from 'yaml'
 import {
   descriptionFromBody,
+  isInside,
   parseSkillDocument,
   skillNameFromEntry,
 } from './catalog.ts'
@@ -152,6 +153,48 @@ export async function installSkill(root: string, skill: PreparedSkill, overwrite
   if (!overwrite && await pathExists(target)) return 'exists'
   await mkdir(directory, { recursive: true })
   await writeTextAtomic(target, skill.content)
+  return 'installed'
+}
+
+/** One resource file that travels beside a bundle's `SKILL.md`. */
+export interface BundleResource {
+  /** Path relative to the skill directory, `/`-separated. */
+  readonly path: string
+  /** File bytes. */
+  readonly data: Uint8Array
+}
+
+/**
+ * Write one skill bundle: its normalized `SKILL.md` plus the resource files
+ * that travel beside it.
+ * @param root - absolute directory receiving `<name>/`.
+ * @param skill - the normalized bundle.
+ * @param resources - resource files relative to the skill directory.
+ * @param overwrite - whether an existing skill directory may be replaced.
+ * @returns whether the bundle was written or left alone.
+ * @throws Error when a resource path would leave the skill directory.
+ */
+export async function installBundle(
+  root: string,
+  skill: PreparedSkill,
+  resources: readonly BundleResource[],
+  overwrite: boolean,
+): Promise<'installed' | 'exists'> {
+  const directory = join(root, skill.name)
+  const target = join(directory, 'SKILL.md')
+  if (!overwrite && await pathExists(target)) return 'exists'
+  for (const resource of resources) {
+    if (!isInside(directory, join(directory, resource.path))) {
+      throw new Error(`bundle resource "${resource.path}" leaves the skill directory`)
+    }
+  }
+  await mkdir(directory, { recursive: true })
+  await writeTextAtomic(target, skill.content)
+  for (const resource of resources) {
+    const path = join(directory, resource.path)
+    await mkdir(dirname(path), { recursive: true })
+    await writeFile(path, resource.data)
+  }
   return 'installed'
 }
 

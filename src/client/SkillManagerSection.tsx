@@ -21,6 +21,7 @@ import type {
   SkillInstallValue,
   SkillSkippedDocument,
   SkillToggleRequest,
+  SkillUploadBundle,
   SkillUploadDocument,
   SkillWriteRequest,
 } from '../protocol.ts'
@@ -183,8 +184,15 @@ export function SkillManagerSection(props: SkillManagerSectionProps) {
     setNotice(undefined)
     void (async () => {
       const documents: SkillUploadDocument[] = []
-      for (const file of files) documents.push({ filename: file.name, content: await file.text() })
-      return await install({ documents, overwrite })
+      const bundles: SkillUploadBundle[] = []
+      for (const file of files) {
+        if (file.name.toLowerCase().endsWith('.zip')) {
+          bundles.push({ filename: file.name, data: await encodeBase64(file) })
+          continue
+        }
+        documents.push({ filename: file.name, content: await file.text() })
+      }
+      return await install({ documents, bundles, overwrite })
     })().then((outcome) => {
       setBusy(false)
       if (outcome.ok) installed(outcome.value)
@@ -242,7 +250,7 @@ export function SkillManagerSection(props: SkillManagerSectionProps) {
               ref={fileInput}
               className={css.fileInput}
               type="file"
-              accept=".md,text/markdown"
+              accept=".md,text/markdown,.zip,application/zip"
               multiple
               onChange={onFiles}
             />
@@ -346,6 +354,20 @@ export function SkillManagerSection(props: SkillManagerSectionProps) {
       )}
     </div>
   )
+}
+
+/**
+ * Base64-encode one archive, chunked so a large bundle never overflows the
+ * argument limit of `String.fromCharCode`.
+ */
+async function encodeBase64(file: File): Promise<string> {
+  const bytes = new Uint8Array(await file.arrayBuffer())
+  let binary = ''
+  const chunk = 0x8000
+  for (let offset = 0; offset < bytes.length; offset += chunk) {
+    binary += String.fromCharCode(...bytes.subarray(offset, offset + chunk))
+  }
+  return btoa(binary)
 }
 
 function toView(outcome: SkillOutcome<SkillCatalog>): View {

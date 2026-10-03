@@ -86,6 +86,24 @@ export declare function restoredInvocation(previous: DisabledRecord['previous'])
  * @returns whether the document was written or left alone.
  */
 export declare function installSkill(root: string, skill: PreparedSkill, overwrite: boolean): Promise<'installed' | 'exists'>;
+/** One resource file that travels beside a bundle's `SKILL.md`. */
+export interface BundleResource {
+    /** Path relative to the skill directory, `/`-separated. */
+    readonly path: string;
+    /** File bytes. */
+    readonly data: Uint8Array;
+}
+/**
+ * Write one skill bundle: its normalized `SKILL.md` plus the resource files
+ * that travel beside it.
+ * @param root - absolute directory receiving `<name>/`.
+ * @param skill - the normalized bundle.
+ * @param resources - resource files relative to the skill directory.
+ * @param overwrite - whether an existing skill directory may be replaced.
+ * @returns whether the bundle was written or left alone.
+ * @throws Error when a resource path would leave the skill directory.
+ */
+export declare function installBundle(root: string, skill: PreparedSkill, resources: readonly BundleResource[], overwrite: boolean): Promise<'installed' | 'exists'>;
 /**
  * Replace one text file through a temporary sibling, so a failed write never
  * leaves a half-written skill document.

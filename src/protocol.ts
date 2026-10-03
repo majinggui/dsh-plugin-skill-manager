@@ -99,10 +99,20 @@ export interface SkillUploadDocument {
   readonly content: string
 }
 
-/** Install browser-read skill documents. */
+/** One browser-read skill archive offered for installation. */
+export interface SkillUploadBundle {
+  /** Original file name, used only for diagnostics. */
+  readonly filename: string
+  /** Complete archive bytes, base64-encoded. */
+  readonly data: string
+}
+
+/** Install browser-read skill documents and archives. */
 export interface SkillInstallRequest {
-  /** Documents to install. */
+  /** Markdown documents to install. */
   readonly documents: readonly SkillUploadDocument[]
+  /** Skill archives to install; omitted or empty when only documents are sent. */
+  readonly bundles?: readonly SkillUploadBundle[]
   /** Whether an existing skill directory may be replaced. */
   readonly overwrite: boolean
 }

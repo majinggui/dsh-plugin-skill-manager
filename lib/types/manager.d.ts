@@ -22,6 +22,12 @@ export interface ManagerConfig {
     readonly agentsHome?: string;
     /** Deployment default for scanning the shared agents root; the page's switch overrides it. */
     readonly includeAgentsRoot?: boolean;
+    /** Largest archive one upload may carry, before extraction. */
+    readonly zipMaxBytes?: number;
+    /** Largest uncompressed size one archive may reach. */
+    readonly zipMaxUncompressedBytes?: number;
+    /** Largest number of files one archive may hold. */
+    readonly zipMaxMembers?: number;
     readonly extraRoots?: readonly {
         path: string;
         source: string;
@@ -46,6 +52,8 @@ export declare class SkillManager {
     private readonly github;
     private readonly uploadMaxDocuments;
     private readonly uploadMaxDocumentBytes;
+    private readonly zipMaxBytes;
+    private readonly zipLimits;
     /**
      * @param ctx - host context used only for logging.
      * @param config - managed roots, state file, and import bounds.
@@ -112,7 +120,8 @@ export declare class SkillManager {
      * @returns installed names, skipped documents, and the refreshed catalog.
      */
     importGitHub(request: SkillGitHubRequest, signal?: AbortSignal): Promise<SkillInstallValue>;
-    private installAll;
+    /** Write every prepared skill, appending outcomes to the caller's lists. */
+    private installPrepared;
     private findSkill;
     /** The roots discovery reads: the shared agents root only while its scan is on. */
     private scannedRoots;

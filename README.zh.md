@@ -30,11 +30,24 @@ dsh plugin --profile web add link:$(pwd)
 | 扫描共享 agents 目录 | 把 `~/.agents/skills` 加入或移出扫描范围；默认关闭，且选择会被记住 |
 | 启用 / 停用 | 开关单个技能名（机制见下） |
 | 编辑 `SKILL.md` | 把文档读入内联编辑器，并按其读取时的版本写回 |
-| 上传技能文档 | 在浏览器中读取一个或多个 `.md` 文件，安装到安装根目录 |
+| 上传技能文档 | 在浏览器中读取 `.md` 文件与/或技能包压缩文件（`.zip`），安装到安装根目录 |
 | 从 GitHub 导入 | 读取仓库链接并安装它暴露的每个 `SKILL.md` |
 | 覆盖已存在的技能 | 向安装请求传递 `overwrite`，否则已存在的同名技能会被跳过 |
 
 无法解析的文档会连同解析错误一起列出而不是消失；两个根目录定义同名技能时会在行内说明，因为开关作用于整个名称。
+
+### 技能压缩包
+
+上传 `.zip` 时，其中每个含 `SKILL.md` 的目录都会作为一个技能安装，并保留同级文件（脚本、参考文档、资源）。Finder 与 GitHub「Download ZIP」常见的外层单层目录会被自动剥离；若压缩包里没有任何 `SKILL.md`，则回退为安装其根目录下的 Markdown 文档。
+
+````text
+bundle.zip
+└── pdf-helper/
+    ├── SKILL.md          →  ~/.dsh/skills/pdf-helper/SKILL.md  （frontmatter 已规范化）
+    └── scripts/fill.sh   →  ~/.dsh/skills/pdf-helper/scripts/fill.sh
+````
+
+条目路径会被规范化：绝对路径或含 `..` 的条目一律拒绝，因此解压无法逃出安装根目录；加密、ZIP64 与不支持的压缩方式都会给出可读原因并拒绝。
 
 ### 启停的工作方式
 
@@ -60,8 +73,11 @@ user-invocable: false
 | `githubMaxFiles` | `20` | 单次 GitHub 导入安装的最大文档数 |
 | `githubMaxDocumentBytes` | `524288` | 单个 GitHub 文档的字节上限 |
 | `githubTimeoutMs` | `30000` | 单次 GitHub 导入的截止时间 |
-| `uploadMaxDocuments` | `20` | 单次上传安装的最大文档数 |
-| `uploadMaxDocumentBytes` | `524288` | 单个上传文档的字节上限 |
+| `uploadMaxDocuments` | `20` | 单次上传可安装的文档与压缩包总数上限 |
+| `uploadMaxDocumentBytes` | `524288` | 单个上传文档的字节上限，同时作为压缩包内单个条目的上限 |
+| `zipMaxBytes` | `8388608` | 单个压缩文件（解压前）的字节上限 |
+| `zipMaxUncompressedBytes` | `33554432` | 单个压缩包解压后的总字节上限 |
+| `zipMaxMembers` | `500` | 单个压缩包内的文件数上限 |
 
 在声明插件行的位置设置：
 
@@ -119,7 +135,7 @@ pnpm typecheck
 - 启停按名称生效：两个根目录下的同名技能无法分别开关。
 - 目录是快照：在别处新增的技能会在下次刷新后出现。
 - 项目级技能不在本页面范围内；只扫描用户级与已配置的根目录。
-- 上传的是 Markdown 文档；bundle 的附带脚本或资源不会被上传。
+- 压缩包只支持 stored 与 deflate 两种压缩方式；加密或 ZIP64 压缩包会被直接拒绝，而不是猜测处理。
 
 ## 许可
 
