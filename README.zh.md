@@ -10,7 +10,7 @@
 
 ```sh
 # 从 npm 安装（发布后）
-dsh plugin --profile web add dsh-plugin-skill-manager@latest
+dsh plugin --profile web add @majinggui/dsh-plugin-skill-manager@latest
 
 # 从本仓库安装
 git clone https://github.com/majinggui/dsh-plugin-skill-manager

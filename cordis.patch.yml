@@ -3,4 +3,4 @@
 # half (the Skills page in Settings).
 - insert:
     - id: skill-manager
-      name: dsh-plugin-skill-manager
+      name: '@majinggui/dsh-plugin-skill-manager'

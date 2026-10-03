@@ -10,7 +10,7 @@ The page is built from the client's own design system — `@deepseek-ai/dsh-clie
 
 ```sh
 # from npm (once published)
-dsh plugin --profile web add dsh-plugin-skill-manager@latest
+dsh plugin --profile web add @majinggui/dsh-plugin-skill-manager@latest
 
 # from this repository
 git clone https://github.com/majinggui/dsh-plugin-skill-manager

@@ -10,7 +10,7 @@
  */
 import { defineConfig } from 'tsdown'
 
-const PACKAGE_NAME = 'dsh-plugin-skill-manager'
+const PACKAGE_NAME = '@majinggui/dsh-plugin-skill-manager'
 
 export default defineConfig([
   {
