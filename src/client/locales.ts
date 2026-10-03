@@ -6,6 +6,7 @@ export type SkillManagerLocaleKey =
   | 'title'
   | 'intro'
   | 'roots'
+  | 'scanAgentsRoot'
   | 'refresh'
   | 'upload'
   | 'uploadHint'
@@ -48,6 +49,7 @@ export const en: Record<SkillManagerLocaleKey, string> = {
   title: 'Skills',
   intro: 'Every skill this deployment can load from its user-level roots, with the source and precedence that decide a duplicated name.',
   roots: 'Scanned roots',
+  scanAgentsRoot: 'Also scan the shared agents directory',
   refresh: 'Refresh',
   upload: 'Upload skill documents',
   uploadHint: 'Choose one or more Markdown documents; each becomes a skill named by its frontmatter or file name.',
@@ -91,6 +93,7 @@ export const zh: Record<SkillManagerLocaleKey, string> = {
   title: '技能',
   intro: '本部署可从用户级技能目录加载的全部技能，并标出来源与决定重名的优先级。',
   roots: '扫描目录',
+  scanAgentsRoot: '同时扫描共享 agents 目录',
   refresh: '刷新',
   upload: '上传技能文档',
   uploadHint: '可选择一个或多个 Markdown 文档；名称取自 frontmatter，缺失时取文件名。',

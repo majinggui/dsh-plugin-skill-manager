@@ -27,6 +27,7 @@ dsh plugin --profile web add link:$(pwd)
 | 操作 | 效果 |
 |---|---|
 | 技能目录 | 扫描根目录下的每个 `SKILL.md` 与平铺 `.md` 文档，附带来源、优先级、绝对路径与启停状态 |
+| 扫描共享 agents 目录 | 把 `~/.agents/skills` 加入或移出扫描范围；默认关闭，且选择会被记住 |
 | 启用 / 停用 | 开关单个技能名（机制见下） |
 | 编辑 `SKILL.md` | 把文档读入内联编辑器，并按其读取时的版本写回 |
 | 上传技能文档 | 在浏览器中读取一个或多个 `.md` 文件，安装到安装根目录 |
@@ -51,7 +52,8 @@ user-invocable: false
 | 字段 | 默认值 | 含义 |
 |---|---|---|
 | `dshHome` | `$DSH_HOME` 或 `~/.dsh` | Harness 配置根目录；其 `skills` 子目录既被扫描也是安装目标 |
-| `agentsHome` | `$DSH_AGENTS_HOME` 或 `~/.agents` | rank 500 的共享 agent 配置根目录 |
+| `agentsHome` | `$DSH_AGENTS_HOME` 或 `~/.agents` | 共享 agent 配置根目录，即页面开关控制的那一个 |
+| `includeAgentsRoot` | `false` | 用户改动开关之前是否扫描该目录；此后以开关保存的选择为准 |
 | `extraRoots` | `[]` | 额外的受管根目录，每项包含 `path`、`source`、`rank` |
 | `stateFile` | `<dshHome>/skill-manager.json` | 启停记录文件 |
 | `installRoot` | `<dshHome>/skills` | 上传与 GitHub 导入的写入目录 |
@@ -73,6 +75,12 @@ user-invocable: false
             source: team
             rank: 300
 ```
+
+### 扫描哪些根目录
+
+默认只扫描 `$DSH_HOME/skills` 与配置的 `extraRoots`。共享 agents 目录（`$DSH_AGENTS_HOME/skills`，rank 500）在页面开关打开之前**不会**被扫描；再次关闭后，其文档会在下一次读取时从目录中消失。该选择与停用记录一起保存在状态文件里，因此重启后仍然有效，并覆盖 `includeAgentsRoot`。
+
+路径限制刻意比扫描范围更宽：读写始终限制在**所有已配置**的根目录内，因此在扫描打开期间被停用的技能，在扫描关闭后仍然可以重新启用。
 
 ## 安全约束
 

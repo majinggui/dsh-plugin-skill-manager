@@ -59,6 +59,8 @@ async function dispatch(manager: SkillManager, request: SkillRequest, signal: Ab
   switch (request.op) {
     case 'list':
       return await manager.catalog(signal)
+    case 'setAgentsRoot':
+      return await manager.setAgentsRoot(request.enabled, signal)
     case 'setEnabled':
       return await manager.setEnabled(request.request, signal)
     case 'read':
@@ -77,6 +79,10 @@ function decode(body: unknown): Decoded {
   switch (body.op) {
     case 'list':
       return { request: { op: 'list' } }
+    case 'setAgentsRoot':
+      return typeof body.enabled === 'boolean'
+        ? { request: { op: 'setAgentsRoot', enabled: body.enabled } }
+        : invalid('"setAgentsRoot" requires an enabled boolean')
     case 'read':
       return typeof body.path === 'string' ? { request: { op: 'read', path: body.path } } : invalid('"read" requires a path string')
     case 'setEnabled': {

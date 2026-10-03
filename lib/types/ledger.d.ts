@@ -34,6 +34,7 @@ export declare class SkillLedger {
     private readonly file;
     private readonly warn;
     private readonly records;
+    private scanAgentsRoot;
     /**
      * @param file - absolute path of the JSON state file.
      * @param warn - sink for a state file that could not be used.
@@ -43,6 +44,16 @@ export declare class SkillLedger {
     get path(): string;
     /** Read the state file into memory, replacing any previously loaded records. */
     load(): void;
+    /**
+     * The persisted choice for the shared agents root.
+     * @returns the stored choice, or `undefined` when the user never changed it.
+     */
+    get scannedAgentsRoot(): boolean | undefined;
+    /**
+     * Persist whether the shared agents root is scanned.
+     * @param enabled - the choice to store.
+     */
+    setScanAgentsRoot(enabled: boolean): void;
     /**
      * Whether one skill name is currently available to catalogs.
      * @param name - kebab-case skill name.

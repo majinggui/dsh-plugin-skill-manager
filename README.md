@@ -27,6 +27,7 @@ The package declares one bundle patch (`cordis.patch.yml`) that inserts the sing
 | Action | Effect |
 |---|---|
 | Catalog | Every `SKILL.md` and flat `.md` document under the scanned roots, with its source, rank, absolute path, and enablement |
+| Scan the shared agents directory | Switches `~/.agents/skills` in or out of the scan; off by default, and the choice is remembered |
 | Enable / disable | Switches one name off or back on (see how below) |
 | Edit `SKILL.md` | Reads the document into an inline editor and saves it against the version it was read from |
 | Upload skill documents | Reads one or more `.md` files in the browser and installs them under the install root |
@@ -51,7 +52,8 @@ That removes the skill from the model catalog, the `skill` tool, and the `/` men
 | Field | Default | Meaning |
 |---|---|---|
 | `dshHome` | `$DSH_HOME` or `~/.dsh` | Harness config root; its `skills` child is scanned and imported into |
-| `agentsHome` | `$DSH_AGENTS_HOME` or `~/.agents` | Shared agent config root scanned at rank 500 |
+| `agentsHome` | `$DSH_AGENTS_HOME` or `~/.agents` | Shared agent config root, the one the page's scan switch controls |
+| `includeAgentsRoot` | `false` | Whether that root is scanned before the user changes the switch; the switch's stored choice wins after that |
 | `extraRoots` | `[]` | Additional managed roots, each with `path`, `source`, and `rank` |
 | `stateFile` | `<dshHome>/skill-manager.json` | Enablement ledger |
 | `installRoot` | `<dshHome>/skills` | Directory that uploads and GitHub imports write into |
@@ -73,6 +75,12 @@ Set them where the plugin row is declared:
             source: team
             rank: 300
 ```
+
+### Which roots are scanned
+
+Only `$DSH_HOME/skills` and any configured `extraRoots` are scanned by default. The shared agents directory (`$DSH_AGENTS_HOME/skills`, rank 500) is **not** scanned until the switch on the page turns it on; turning it off again drops its documents from the catalog on the next read. The choice is stored beside the disable records in the state file, so it survives a restart and overrides `includeAgentsRoot`.
+
+Path confinement is wider than the scan on purpose: reads and writes stay confined to every *configured* root, so a skill that was switched off while the agents directory was being scanned can still be switched back on after the scan is turned off.
 
 ## Safety
 

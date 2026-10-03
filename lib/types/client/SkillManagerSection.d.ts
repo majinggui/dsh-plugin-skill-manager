@@ -21,6 +21,8 @@ export type SkillOutcome<Value> = {
 export interface SkillManagerInjected {
     /** Read the current managed catalog. */
     list: () => Promise<SkillOutcome<SkillCatalog>>;
+    /** Choose whether the shared agents root joins the scan. */
+    setAgentsRoot: (enabled: boolean) => Promise<SkillOutcome<SkillCatalog>>;
     /** Turn one skill name on or off; resolves with the refreshed catalog. */
     setEnabled: (request: SkillToggleRequest) => Promise<SkillOutcome<SkillCatalog>>;
     /** Read one skill document for the editor. */

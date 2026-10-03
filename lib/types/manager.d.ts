@@ -20,6 +20,8 @@ export declare class SkillManagerError extends Error {
 export interface ManagerConfig {
     readonly dshHome?: string;
     readonly agentsHome?: string;
+    /** Deployment default for scanning the shared agents root; the page's switch overrides it. */
+    readonly includeAgentsRoot?: boolean;
     readonly extraRoots?: readonly {
         path: string;
         source: string;
@@ -35,7 +37,10 @@ export interface ManagerConfig {
 }
 /** Owner of the managed skill catalog and its one write path. */
 export declare class SkillManager {
-    private readonly roots;
+    /** Every configured root, including the shared agents root while its scan is off. */
+    private readonly configuredRoots;
+    private readonly agentsRoot;
+    private readonly scanAgentsRootDefault;
     private readonly installRoot;
     private readonly ledger;
     private readonly github;
@@ -60,6 +65,13 @@ export declare class SkillManager {
      * @throws SkillManagerError `not-found` when the name has no document and no record.
      */
     setEnabled(request: SkillToggleRequest, signal?: AbortSignal): Promise<SkillCatalog>;
+    /**
+     * Choose whether the shared agents root is scanned, and persist the choice.
+     * @param enabled - whether the root's documents join the catalog.
+     * @param signal - caller cancellation.
+     * @returns the refreshed catalog.
+     */
+    setAgentsRoot(enabled: boolean, signal?: AbortSignal): Promise<SkillCatalog>;
     /**
      * Read one skill document for the editor.
      * @param path - absolute document path inside a managed root.
@@ -102,6 +114,10 @@ export declare class SkillManager {
     importGitHub(request: SkillGitHubRequest, signal?: AbortSignal): Promise<SkillInstallValue>;
     private installAll;
     private findSkill;
+    /** The roots discovery reads: the shared agents root only while its scan is on. */
+    private scannedRoots;
+    /** The effective scan choice: the persisted switch, else the deployment default. */
+    private scansAgentsRoot;
     /** Resolve one client path and refuse anything outside every managed root. */
     private assertManagedPath;
 }

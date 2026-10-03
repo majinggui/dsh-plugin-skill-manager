@@ -23,6 +23,11 @@ export interface Config {
     dshHome?: string;
     /** Shared agent config root. Defaults to `$DSH_AGENTS_HOME` or `~/.agents`. */
     agentsHome?: string;
+    /**
+     * Whether the shared agents root is scanned by default. The Skills page's
+     * switch overrides this and persists the choice; off by default.
+     */
+    includeAgentsRoot?: boolean;
     /** Extra managed roots, reported after the two user-level defaults. */
     extraRoots?: {
         path: string;
@@ -48,6 +53,7 @@ export interface Config {
 export declare const Config: z<Schemastery.ObjectS<{
     dshHome: z<string, string>;
     agentsHome: z<string, string>;
+    includeAgentsRoot: z<boolean, boolean>;
     extraRoots: z<({
         path?: string | null;
         source?: string | null;
@@ -67,6 +73,7 @@ export declare const Config: z<Schemastery.ObjectS<{
 }>, Schemastery.ObjectT<{
     dshHome: z<string, string>;
     agentsHome: z<string, string>;
+    includeAgentsRoot: z<boolean, boolean>;
     extraRoots: z<({
         path?: string | null;
         source?: string | null;

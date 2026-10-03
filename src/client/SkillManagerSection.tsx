@@ -36,6 +36,8 @@ export type SkillOutcome<Value> =
 export interface SkillManagerInjected {
   /** Read the current managed catalog. */
   list: () => Promise<SkillOutcome<SkillCatalog>>
+  /** Choose whether the shared agents root joins the scan. */
+  setAgentsRoot: (enabled: boolean) => Promise<SkillOutcome<SkillCatalog>>
   /** Turn one skill name on or off; resolves with the refreshed catalog. */
   setEnabled: (request: SkillToggleRequest) => Promise<SkillOutcome<SkillCatalog>>
   /** Read one skill document for the editor. */
@@ -93,7 +95,7 @@ const SKIP_REASON_KEYS: Readonly<Record<SkillSkippedDocument['reason'], SkillMan
 
 /** Render the skills management page. */
 export function SkillManagerSection(props: SkillManagerSectionProps) {
-  const { t, list, setEnabled, read, write, install, importGitHub } = props
+  const { t, list, setEnabled, setAgentsRoot, read, write, install, importGitHub } = props
   const [view, setView] = useState<View>({ status: 'loading' })
   const [notice, setNotice] = useState<Notice>()
   const [editor, setEditor] = useState<Editor>()
@@ -126,6 +128,14 @@ export function SkillManagerSection(props: SkillManagerSectionProps) {
         return
       }
       setNotice({ tone: 'error', text: outcome.error.message })
+    })
+  }
+
+  const toggleAgentsRoot = (next: boolean): void => {
+    setNotice(undefined)
+    void setAgentsRoot(next).then((outcome) => {
+      if (outcome.ok) setView({ status: 'ready', catalog: outcome.value })
+      else setNotice({ tone: 'error', text: outcome.error.message })
     })
   }
 
@@ -217,6 +227,16 @@ export function SkillManagerSection(props: SkillManagerSectionProps) {
             ))}
           </div>
           <p className={css.hint} title={view.catalog.installRoot}>{t('installRoot')}: {view.catalog.installRoot}</p>
+          <div className={css.agentsRoot} title={view.catalog.agentsRootPath}>
+            <Switch
+              checked={view.catalog.agentsRootEnabled}
+              label={`${t('scanAgentsRoot')}: ${view.catalog.agentsRootPath}`}
+              disabled={busy}
+              onChange={toggleAgentsRoot}
+            />
+            <span className={css.agentsRootLabel}>{t('scanAgentsRoot')}</span>
+            <code className={css.path}>{view.catalog.agentsRootPath}</code>
+          </div>
           <div className={css.actions}>
             <input
               ref={fileInput}

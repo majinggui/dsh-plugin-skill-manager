@@ -22,6 +22,8 @@ export declare const css: {
     readonly noticeError: "dsm-notice-error";
     readonly roots: "dsm-roots";
     readonly rootsLabel: "dsm-roots-label";
+    readonly agentsRoot: "dsm-agents-root";
+    readonly agentsRootLabel: "dsm-agents-root-label";
     readonly root: "dsm-root";
     readonly rank: "dsm-rank";
     readonly actions: "dsm-actions";

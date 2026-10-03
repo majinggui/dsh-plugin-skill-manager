@@ -56,6 +56,7 @@ export function apply(ctx: ClientContext): void {
   const t = ctx.locale.bind(NS)
   const injected = (): SkillManagerInjected => ({
     list: async () => await call({ op: 'list' }),
+    setAgentsRoot: async enabled => await call({ op: 'setAgentsRoot', enabled }),
     setEnabled: async request => await call({ op: 'setEnabled', request }),
     read: async path => await call({ op: 'read', path }),
     write: async request => await call({ op: 'write', request }),

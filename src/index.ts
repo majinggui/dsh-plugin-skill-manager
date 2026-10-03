@@ -30,6 +30,11 @@ export interface Config {
   dshHome?: string
   /** Shared agent config root. Defaults to `$DSH_AGENTS_HOME` or `~/.agents`. */
   agentsHome?: string
+  /**
+   * Whether the shared agents root is scanned by default. The Skills page's
+   * switch overrides this and persists the choice; off by default.
+   */
+  includeAgentsRoot?: boolean
   /** Extra managed roots, reported after the two user-level defaults. */
   extraRoots?: { path: string; source: string; rank: number }[]
   /** Absolute path of the disable ledger. Defaults to `<dshHome>/skill-manager.json`. */
@@ -52,6 +57,7 @@ export interface Config {
 export const Config = z.object({
   dshHome: z.string(),
   agentsHome: z.string(),
+  includeAgentsRoot: z.boolean(),
   extraRoots: z.array(z.object({
     path: z.string(),
     source: z.string(),

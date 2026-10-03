@@ -34,6 +34,8 @@ const LEDGER_VERSION = 1
 
 interface LedgerFile {
   readonly version: number
+  /** Persisted scan choice for the shared agents root; absent until the user changes it. */
+  readonly scanAgentsRoot?: boolean
   readonly disabled: readonly DisabledRecord[]
 }
 
@@ -46,6 +48,7 @@ interface LedgerFile {
  */
 export class SkillLedger {
   private readonly records = new Map<string, DisabledRecord>()
+  private scanAgentsRoot: boolean | undefined
 
   /**
    * @param file - absolute path of the JSON state file.
@@ -64,6 +67,7 @@ export class SkillLedger {
   /** Read the state file into memory, replacing any previously loaded records. */
   load(): void {
     this.records.clear()
+    this.scanAgentsRoot = undefined
     let raw: string
     try {
       raw = readFileSync(this.file, 'utf8')
@@ -79,6 +83,23 @@ export class SkillLedger {
       return
     }
     for (const record of readRecords(parsed)) this.records.set(record.name, record)
+    this.scanAgentsRoot = readScanAgentsRoot(parsed)
+  }
+
+  /**
+   * The persisted choice for the shared agents root.
+   * @returns the stored choice, or `undefined` when the user never changed it.
+   */
+  get scannedAgentsRoot(): boolean | undefined {
+    return this.scanAgentsRoot
+  }
+
+  /**
+   * Persist whether the shared agents root is scanned.
+   * @param enabled - the choice to store.
+   */
+  setScanAgentsRoot(enabled: boolean): void {
+    this.scanAgentsRoot = enabled
   }
 
   /**
@@ -124,6 +145,7 @@ export class SkillLedger {
   async persist(): Promise<void> {
     const payload: LedgerFile = {
       version: LEDGER_VERSION,
+      ...this.scanAgentsRoot === undefined ? {} : { scanAgentsRoot: this.scanAgentsRoot },
       disabled: [...this.records.values()].sort((left, right) => left.name.localeCompare(right.name)),
     }
     await mkdir(dirname(this.file), { recursive: true })
@@ -131,6 +153,12 @@ export class SkillLedger {
     await writeFile(temporary, `${JSON.stringify(payload, null, 2)}\n`, { encoding: 'utf8' })
     await rename(temporary, this.file)
   }
+}
+
+function readScanAgentsRoot(parsed: unknown): boolean | undefined {
+  if (parsed === null || typeof parsed !== 'object') return undefined
+  const value = (parsed as { scanAgentsRoot?: unknown }).scanAgentsRoot
+  return typeof value === 'boolean' ? value : undefined
 }
 
 function readRecords(parsed: unknown): readonly DisabledRecord[] {

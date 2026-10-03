@@ -65,6 +65,8 @@ export class SkillManagerError extends Error {
 export interface ManagerConfig {
   readonly dshHome?: string
   readonly agentsHome?: string
+  /** Deployment default for scanning the shared agents root; the page's switch overrides it. */
+  readonly includeAgentsRoot?: boolean
   readonly extraRoots?: readonly { path: string; source: string; rank: number }[]
   readonly stateFile?: string
   readonly installRoot?: string
@@ -77,7 +79,10 @@ export interface ManagerConfig {
 
 /** Owner of the managed skill catalog and its one write path. */
 export class SkillManager {
-  private readonly roots: readonly ManagedRoot[]
+  /** Every configured root, including the shared agents root while its scan is off. */
+  private readonly configuredRoots: readonly ManagedRoot[]
+  private readonly agentsRoot: ManagedRoot
+  private readonly scanAgentsRootDefault: boolean
   private readonly installRoot: string
   private readonly ledger: SkillLedger
   private readonly github: { maxFiles: number; maxDocumentBytes: number; timeoutMs: number }
@@ -91,11 +96,13 @@ export class SkillManager {
   constructor(ctx: Context, config: ManagerConfig = {}) {
     const dshHome = resolveDshHome(config.dshHome)
     const agentsHome = resolve(config.agentsHome ?? process.env.DSH_AGENTS_HOME ?? join(homedir(), '.agents'))
-    this.roots = [
+    this.agentsRoot = { path: join(agentsHome, 'skills'), source: 'user-agents', rank: USER_AGENTS_SKILL_RANK }
+    this.configuredRoots = [
       { path: join(dshHome, 'skills'), source: 'user-dsh', rank: USER_DSH_SKILL_RANK },
-      { path: join(agentsHome, 'skills'), source: 'user-agents', rank: USER_AGENTS_SKILL_RANK },
+      this.agentsRoot,
       ...(config.extraRoots ?? []).map(root => ({ path: resolve(root.path), source: root.source, rank: root.rank })),
     ]
+    this.scanAgentsRootDefault = config.includeAgentsRoot ?? false
     this.installRoot = resolve(config.installRoot ?? join(dshHome, 'skills'))
     this.ledger = new SkillLedger(
       resolve(config.stateFile ?? join(dshHome, 'skill-manager.json')),
@@ -117,7 +124,7 @@ export class SkillManager {
    * @returns the current management view.
    */
   async catalog(signal?: AbortSignal): Promise<SkillCatalog> {
-    const scanned = await scanRoots(this.roots, signal)
+    const scanned = await scanRoots(this.scannedRoots(), signal)
     const present = new Set<string>()
     const duplicates = new Set<string>()
     for (const skill of scanned) {
@@ -131,12 +138,14 @@ export class SkillManager {
         .map(orphanEntry))
       .sort(compareEntries)
     return {
-      roots: [...this.roots]
+      roots: this.scannedRoots()
         .map(root => ({ path: root.path, source: root.source, rank: root.rank }))
         .sort(compareRoots),
       skills,
       installRoot: this.installRoot,
       statePath: this.ledger.path,
+      agentsRootEnabled: this.scansAgentsRoot(),
+      agentsRootPath: this.agentsRoot.path,
     }
   }
 
@@ -183,6 +192,20 @@ export class SkillManager {
       disabledAt: new Date().toISOString(),
       previous,
     })
+    await this.ledger.persist()
+    signal?.throwIfAborted()
+    return await this.catalog(signal)
+  }
+
+  /**
+   * Choose whether the shared agents root is scanned, and persist the choice.
+   * @param enabled - whether the root's documents join the catalog.
+   * @param signal - caller cancellation.
+   * @returns the refreshed catalog.
+   */
+  async setAgentsRoot(enabled: boolean, signal?: AbortSignal): Promise<SkillCatalog> {
+    signal?.throwIfAborted()
+    this.ledger.setScanAgentsRoot(enabled)
     await this.ledger.persist()
     signal?.throwIfAborted()
     return await this.catalog(signal)
@@ -282,14 +305,26 @@ export class SkillManager {
   }
 
   private async findSkill(name: string, signal?: AbortSignal): Promise<ScannedSkill | undefined> {
-    const scanned = await scanRoots(this.roots, signal)
+    const scanned = await scanRoots(this.scannedRoots(), signal)
     return scanned.find(skill => skill.name === name)
+  }
+
+  /** The roots discovery reads: the shared agents root only while its scan is on. */
+  private scannedRoots(): readonly ManagedRoot[] {
+    return this.scansAgentsRoot()
+      ? this.configuredRoots
+      : this.configuredRoots.filter(root => root !== this.agentsRoot)
+  }
+
+  /** The effective scan choice: the persisted switch, else the deployment default. */
+  private scansAgentsRoot(): boolean {
+    return this.ledger.scannedAgentsRoot ?? this.scanAgentsRootDefault
   }
 
   /** Resolve one client path and refuse anything outside every managed root. */
   private assertManagedPath(path: string): string {
     const resolved = resolve(path)
-    if (!this.roots.some(root => isInside(root.path, resolved))) {
+    if (!this.configuredRoots.some(root => isInside(root.path, resolved))) {
       throw new SkillManagerError('outside-roots', `"${resolved}" is outside every managed skill root`)
     }
     return resolved

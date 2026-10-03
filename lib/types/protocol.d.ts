@@ -45,8 +45,12 @@ export interface SkillEntry {
 }
 /** The complete management view: scanned roots, their skills, and write targets. */
 export interface SkillCatalog {
-    /** Scanned roots in rank order. */
+    /** Scanned roots in rank order; the shared agents root is absent while its scan is off. */
     readonly roots: readonly SkillRoot[];
+    /** Whether the shared agents root is being scanned. */
+    readonly agentsRootEnabled: boolean;
+    /** Absolute path of the shared agents root, whether or not it is scanned. */
+    readonly agentsRootPath: string;
     /** Every scanned document, sorted by rank, then name, then path. */
     readonly skills: readonly SkillEntry[];
     /** Directory that document and GitHub imports write into. */
@@ -121,6 +125,9 @@ export interface SkillInstallValue {
 /** Request bodies the browser half sends, discriminated by `op`. */
 export type SkillRequest = {
     readonly op: 'list';
+} | {
+    readonly op: 'setAgentsRoot';
+    readonly enabled: boolean;
 } | {
     readonly op: 'setEnabled';
     readonly request: SkillToggleRequest;
