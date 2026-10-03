@@ -51,9 +51,10 @@ const DEFAULT_GITHUB_MAX_DOCUMENT_BYTES = 512 * 1024
 const DEFAULT_GITHUB_TIMEOUT_MS = 30_000
 const DEFAULT_UPLOAD_MAX_DOCUMENTS = 20
 const DEFAULT_UPLOAD_MAX_DOCUMENT_BYTES = 512 * 1024
-const DEFAULT_ZIP_MAX_BYTES = 8 * 1024 * 1024
-const DEFAULT_ZIP_MAX_UNCOMPRESSED_BYTES = 32 * 1024 * 1024
-const DEFAULT_ZIP_MAX_MEMBERS = 500
+const DEFAULT_ZIP_MAX_BYTES = 50 * 1024 * 1024
+const DEFAULT_ZIP_MAX_UNCOMPRESSED_BYTES = 200 * 1024 * 1024
+const DEFAULT_ZIP_MAX_MEMBERS = 2000
+const DEFAULT_ZIP_MAX_ENTRY_BYTES = 64 * 1024 * 1024
 
 /** One failed operation, carrying the stable code the page branches on. */
 export class SkillManagerError extends Error {
@@ -79,6 +80,8 @@ export interface ManagerConfig {
   readonly zipMaxUncompressedBytes?: number
   /** Largest number of files one archive may hold. */
   readonly zipMaxMembers?: number
+  /** Largest uncompressed size of one file inside an archive. */
+  readonly zipMaxEntryBytes?: number
   readonly extraRoots?: readonly { path: string; source: string; rank: number }[]
   readonly stateFile?: string
   readonly installRoot?: string
@@ -133,9 +136,17 @@ export class SkillManager {
     this.zipMaxBytes = positive('zipMaxBytes', config.zipMaxBytes, DEFAULT_ZIP_MAX_BYTES)
     this.zipLimits = {
       maxMembers: positive('zipMaxMembers', config.zipMaxMembers, DEFAULT_ZIP_MAX_MEMBERS),
-      maxEntryBytes: this.uploadMaxDocumentBytes * 8,
+      maxEntryBytes: positive('zipMaxEntryBytes', config.zipMaxEntryBytes, DEFAULT_ZIP_MAX_ENTRY_BYTES),
       maxTotalBytes: positive('zipMaxUncompressedBytes', config.zipMaxUncompressedBytes, DEFAULT_ZIP_MAX_UNCOMPRESSED_BYTES),
     }
+  }
+
+  /**
+   * Largest JSON request body this manager's bounds can produce: the archive
+   * cap plus base64 expansion and framing.
+   */
+  get maxRequestBodyBytes(): number {
+    return Math.ceil(this.zipMaxBytes * 4 / 3) + 1024 * 1024
   }
 
   /**
@@ -166,6 +177,10 @@ export class SkillManager {
       statePath: this.ledger.path,
       agentsRootEnabled: this.scansAgentsRoot(),
       agentsRootPath: this.agentsRoot.path,
+      uploadLimits: {
+        maxDocumentBytes: this.uploadMaxDocumentBytes,
+        maxArchiveBytes: this.zipMaxBytes,
+      },
     }
   }
 

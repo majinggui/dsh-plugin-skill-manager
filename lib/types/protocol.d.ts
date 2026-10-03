@@ -43,6 +43,13 @@ export interface SkillEntry {
     /** Whether another scanned entry carries the same name. */
     readonly duplicate: boolean;
 }
+/** Upload bounds the page applies before sending anything. */
+export interface SkillUploadLimits {
+    /** Largest accepted Markdown document, in bytes. */
+    readonly maxDocumentBytes: number;
+    /** Largest accepted skill archive, in bytes, before extraction. */
+    readonly maxArchiveBytes: number;
+}
 /** The complete management view: scanned roots, their skills, and write targets. */
 export interface SkillCatalog {
     /** Scanned roots in rank order; the shared agents root is absent while its scan is off. */
@@ -57,6 +64,8 @@ export interface SkillCatalog {
     readonly installRoot: string;
     /** State file backing the enable/disable ledger. */
     readonly statePath: string;
+    /** Upload bounds this deployment accepts. */
+    readonly uploadLimits: SkillUploadLimits;
 }
 /** Enable or disable one skill by name. */
 export interface SkillToggleRequest {

@@ -180,6 +180,17 @@ export function SkillManagerSection(props: SkillManagerSectionProps) {
     // Clear the input so picking the same file again still fires a change.
     event.target.value = ''
     if (files.length === 0) return
+    const limits = view.status === 'ready' ? view.catalog.uploadLimits : undefined
+    for (const file of files) {
+      const limit = file.name.toLowerCase().endsWith('.zip') ? limits?.maxArchiveBytes : limits?.maxDocumentBytes
+      if (limit !== undefined && file.size > limit) {
+        setNotice({
+          tone: 'error',
+          text: `${file.name} — ${t('tooLarge')}: ${formatBytes(file.size)} > ${formatBytes(limit)}`,
+        })
+        return
+      }
+    }
     setBusy(true)
     setNotice(undefined)
     void (async () => {
@@ -354,6 +365,13 @@ export function SkillManagerSection(props: SkillManagerSectionProps) {
       )}
     </div>
   )
+}
+
+/** Render a byte count for a size complaint. */
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes.toString()} B`
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
 /**

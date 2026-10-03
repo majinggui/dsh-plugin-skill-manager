@@ -19,9 +19,6 @@ import type {
   SkillWriteRequest,
 } from './protocol.ts'
 
-/** The JSON body limit accepted by the route, in bytes. */
-const MAX_REQUEST_BYTES = 8 * 1024 * 1024
-
 type Decoded = { readonly request: SkillRequest } | { readonly failure: SkillFailure }
 
 /**
@@ -32,9 +29,10 @@ type Decoded = { readonly request: SkillRequest } | { readonly failure: SkillFai
  */
 export function createHandler(manager: SkillManager, ctx: Context): (request: Request) => Promise<Response> {
   return async (request: Request): Promise<Response> => {
+    const limit = manager.maxRequestBodyBytes
     const declared = request.headers.get('content-length')
-    if (declared !== null && Number(declared) > MAX_REQUEST_BYTES) {
-      return failure({ code: 'rejected', message: `the request body exceeds ${MAX_REQUEST_BYTES.toString()} bytes` }, 413)
+    if (declared !== null && Number(declared) > limit) {
+      return failure({ code: 'rejected', message: `the request body exceeds ${limit.toString()} bytes` }, 413)
     }
     let body: unknown
     try {

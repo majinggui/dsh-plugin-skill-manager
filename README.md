@@ -74,10 +74,11 @@ That removes the skill from the model catalog, the `skill` tool, and the `/` men
 | `githubMaxDocumentBytes` | `524288` | Largest accepted GitHub document |
 | `githubTimeoutMs` | `30000` | Deadline for one GitHub import |
 | `uploadMaxDocuments` | `20` | Largest number of documents and archives one upload installs |
-| `uploadMaxDocumentBytes` | `524288` | Largest accepted upload document, and the base entry bound for an archive member |
-| `zipMaxBytes` | `8388608` | Largest archive one upload may carry, before extraction |
-| `zipMaxUncompressedBytes` | `33554432` | Largest uncompressed size one archive may reach |
-| `zipMaxMembers` | `500` | Largest number of files one archive may hold |
+| `uploadMaxDocumentBytes` | `524288` | Largest accepted Markdown document |
+| `zipMaxBytes` | `52428800` | Largest archive one upload may carry, before extraction (50 MB) |
+| `zipMaxUncompressedBytes` | `209715200` | Largest uncompressed size one archive may reach (200 MB) |
+| `zipMaxMembers` | `2000` | Largest number of files one archive may hold |
+| `zipMaxEntryBytes` | `67108864` | Largest uncompressed size of one file inside an archive (64 MB) |
 
 Set them where the plugin row is declared:
 

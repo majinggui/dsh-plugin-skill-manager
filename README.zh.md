@@ -74,10 +74,11 @@ user-invocable: false
 | `githubMaxDocumentBytes` | `524288` | 单个 GitHub 文档的字节上限 |
 | `githubTimeoutMs` | `30000` | 单次 GitHub 导入的截止时间 |
 | `uploadMaxDocuments` | `20` | 单次上传可安装的文档与压缩包总数上限 |
-| `uploadMaxDocumentBytes` | `524288` | 单个上传文档的字节上限，同时作为压缩包内单个条目的上限 |
-| `zipMaxBytes` | `8388608` | 单个压缩文件（解压前）的字节上限 |
-| `zipMaxUncompressedBytes` | `33554432` | 单个压缩包解压后的总字节上限 |
-| `zipMaxMembers` | `500` | 单个压缩包内的文件数上限 |
+| `uploadMaxDocumentBytes` | `524288` | 单个上传 Markdown 文档的字节上限 |
+| `zipMaxBytes` | `52428800` | 单个压缩文件（解压前）的字节上限（50 MB） |
+| `zipMaxUncompressedBytes` | `209715200` | 单个压缩包解压后的总字节上限（200 MB） |
+| `zipMaxMembers` | `2000` | 单个压缩包内的文件数上限 |
+| `zipMaxEntryBytes` | `67108864` | 压缩包内单个文件解压后的大小上限（64 MB） |
 
 在声明插件行的位置设置：
 

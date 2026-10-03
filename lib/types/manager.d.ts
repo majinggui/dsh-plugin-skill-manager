@@ -28,6 +28,8 @@ export interface ManagerConfig {
     readonly zipMaxUncompressedBytes?: number;
     /** Largest number of files one archive may hold. */
     readonly zipMaxMembers?: number;
+    /** Largest uncompressed size of one file inside an archive. */
+    readonly zipMaxEntryBytes?: number;
     readonly extraRoots?: readonly {
         path: string;
         source: string;
@@ -59,6 +61,11 @@ export declare class SkillManager {
      * @param config - managed roots, state file, and import bounds.
      */
     constructor(ctx: Context, config?: ManagerConfig);
+    /**
+     * Largest JSON request body this manager's bounds can produce: the archive
+     * cap plus base64 expansion and framing.
+     */
+    get maxRequestBodyBytes(): number;
     /**
      * Report the managed catalog.
      * @param signal - caller cancellation.
